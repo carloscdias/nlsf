@@ -1,0 +1,44 @@
+#!/bin/bash
+# Need super user permissions
+
+# file to save formated data
+FILE="$1"
+
+# get current IP with mask
+LOCAL_NETWORK=`ip addr show | sed -rn 's/\s*inet\s([0-9\.\/]+)\s.*\sdynamic\s.*/\1/p'`
+
+# create file
+if [[ -e $FILE ]]; then
+	rm $FILE
+fi
+touch $FILE
+
+nmap -sn $LOCAL_NETWORK | while read line; do
+	case $line in
+		'Starting Nmap'*)
+			;;
+		'Nmap done'*)
+			;;
+		'')
+			;;
+		'Nmap'*)
+			HOST=`echo $line | sed -rn 's/^Nmap scan report for (.*)$/\1/p'`
+			;;
+		'Host'*)
+			TIME=`echo $line | sed -rn 's/^Host is up \(([0-9\.]+)s latency\)\.$/\1/p'`
+			;;
+		'MAC'*)
+			MAC=`echo $line | sed -rn 's/^MAC Address: ([A-Z0-9:]*) \(.*\)$/\1/p'`
+			SELLER=`echo $line | sed -rn 's/^MAC Address: [A-Z0-9:]* \((.*)\)$/\1/p'`
+			echo -e "$TIME\t$MAC\t$HOST\t$SELLER" >> $FILE
+			;;
+	esac
+done
+
+HOST=`echo $LOCAL_NETWORK | sed -rn 's/([0-9\.]+).*/\1/p'`
+
+# add this host
+#echo -e "0.00\t00:00:00:00:00:00\t$HOST\tThis host" >> $FILE
+
+# Sort first column based on locale
+LC_ALL=C sort -k1 -n $FILE -o $FILE
