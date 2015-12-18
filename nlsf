@@ -2,7 +2,7 @@
 # Need super user permissions
 
 # file to save formated data
-FILE="$1"
+FILE=${1:-local-network-data}
 
 # get current IP with mask
 LOCAL_NETWORK=`ip addr show | sed -rn 's/\s*inet\s([0-9\.\/]+)\s.*\sdynamic\s.*/\1/p'`
